@@ -9,37 +9,40 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <armadillo>
+
+using namespace arma;
 
 using namespace std;
-typedef vector<vector<double>> mat;
-typedef vector<double> vec;
+typedef vector<vector<double>> matx;
+typedef vector<double> vect;
 
 namespace LinearAlgebra{
-    mat gaussElimination(mat);
-    tuple<mat, mat> LUDecomposition(mat A);
-    double innerProduct(vec &vec1, vec &vec2);
-    void solveLinearEquation(mat Uc);
-    mat outerProduct(vec vec1, vec vec2);
-    mat matMul(mat, mat);
-    mat GramSchmidt(mat A);
+    matx gaussElimination(matx);
+    tuple<matx, matx> LUDecomposition(matx A);
+    double innerProduct(vect &vec1, vect &vec2);
+    vect solveLinearEquation(matx Uc);
+    matx outerProduct(vect vec1, vect vec2);
+    matx matMul(matx, matx);
+    matx GramSchmidt(matx A);
 
 
     class Matrix {
     private:
-        mat matrix;
+        matx matrix;
         vector<int> rowBasisInd;
         vector<int> colBasisInd;
         int nRows = 0;
         int nCols = 0;
         int rank = 0;
 
-        mat L;
-        mat U;
-        mat Q;
-        mat R;
+        matx L;
+        matx U;
+        matx Q;
+        matx R;
 
         vector<double> eigneValues;
-        vector<vector<double>> eigneVectors;
+        vector<vector<double>> eigenVectors;
 
     public:
         Matrix() = default;
@@ -48,11 +51,11 @@ namespace LinearAlgebra{
             this->nRows = rows;
             this->nCols = cols;
 
-            mat matrix(rows, vec(cols, initValue));
+            matx matrix(rows, vect(cols, initValue));
             this->matrix = matrix;
         }
 
-        Matrix(mat A){
+        Matrix(matx A){
             this->matrix = A;
             this->nRows = A.size();
             this->nCols = A[0].size();
@@ -67,7 +70,7 @@ namespace LinearAlgebra{
             return this->matrix[rowInd][colInd];
         }
 
-        void addRow(vec row) {
+        void addRow(vect row) {
             if(nCols == 0)
                 nCols = row.size();
             assert(row.size() == nCols);
@@ -98,17 +101,15 @@ namespace LinearAlgebra{
             }
             // QR Method
             double eps = 1e-10;
-            mat tempQ = Q;
-            mat temp = this->matrix;
+            matx tempQ = Q;
+            matx temp = this->matrix;
             double threshold = numeric_limits<double>::max();
             int iter = 0;
             int iterMax = 100000;
 
             // check 0 in diagonal
             for(int i = 0; i < nRows; i++){
-                if(temp[i][i] == 0){
-                    assert(false);
-                }
+                assert(temp[i][i] != 0 || isnan(temp[i][i]) == 0);
             }
 
             while(threshold >= eps){
@@ -138,35 +139,126 @@ namespace LinearAlgebra{
                     break;
             }
 
+            for(int i = 0; i < nRows; i++){
+                for(int j = 0; j < nCols; j++){
+                    if(i > j){
+                        temp[i][j] = 0;
+                    }
+                }
+            }
+
             Matrix X(temp);
             X.print();
-            cout << iter << endl;
+//            cout << iter << endl;
 
             for(int i = 0; i < nRows; i++){
                 eigneValues.push_back(temp[i][i]);
             }
-
-
-
         }
 
-        void SVD(){
-            Matrix A1(matMul(this->matrix, Matrix(this->matrix).T()));
-            Matrix A2(matMul(Matrix(this->matrix).T(), this->matrix));
+        void eigenVector(bool normalize=false){
+            assert(eigneValues.size() > 0);
+            for(int i = 0; i < eigneValues.size(); i++){
+                matx temp = matrix;
+                // Ax - lambda x
+                for(int j = 0; j < nRows; j++)
+                    temp[j][j] = temp[j][j] - eigneValues[i];
+                // Ax - lambda x = 0
+                for(int j = 0; j < nRows; j++){
+                    temp[j].push_back(0);
+                }
+                Matrix B(temp);
+                vect tempVec = B.solveLinearEquation(true);
+                if(normalize){
+                    double sum = 0;
+                    for(auto v : tempVec){
+                        sum += v * v;
+                    }
+                    double div = sqrt(sum);
+                    for(int k = 0; k < tempVec.size(); k++){
+                        tempVec[k] /= div;
+                    }
+                    eigenVectors.push_back(tempVec);
+                }
+                else{
+                    eigenVectors.push_back(tempVec);
+                }
+
+            }
+        }
+
+        void SVD(bool normalize=true){
+
+            Matrix A1(matMul(Matrix(this->matrix).T(), this->matrix)); // A^T A
+            Matrix A2(matMul(this->matrix, Matrix(this->matrix).T())); // A A^T
+            A1.eigenValue();
+            A1.eigenVector(normalize);
+            A2.eigenValue();
+            A2.eigenVector(normalize);
+            matx tempD;
+            tempD.resize(A1.eigneValues.size());
+            for(int i = 0; i < A1.eigneValues.size(); i++){
+                tempD[i].resize(A1.eigneValues.size());
+                for(int j = 0; j < A1.eigneValues.size(); j++){
+                    if(i == j){
+                        tempD[i][j] = sqrt(A1.eigneValues[i]);
+//                        tempD[i][i] = eigneValues[i];
+                    }
+                    else{
+                        tempD[i][j] = 0;
+                    }
+                }
+            }
+
+            Matrix D(tempD);
+            Matrix V(Matrix(A1.eigenVectors).T());
+            Matrix U(Matrix(A2.eigenVectors).T());
+
+            cout << "U" << endl;
+            U.print();
+            cout << "D" << endl;
+            D.print();
+            cout << "V" << endl;
+            V.print();
+
+            cout << "RESULT " << endl;
+
+            matx X;
+            X = matMul(U.getMatrix(), D.getMatrix());
+            X = matMul(X, V.T());
+
+            Matrix XX(X);
+            XX.print();
+
+
+
+//            matx temp;
+//            temp.resize(A1.eigneValues.size());
+//            for(int i = 0; i < A1.eigneValues.size(); i++){
+//                for(int j = 0; j < A1.eigneValues.size(); j++){
+//                    temp[i].push_back(innerProduct(A2.eigenVectors[i], A2.eigenVectors[j]));
+//                }
+//            }
+//            Matrix XXX(temp);
+//            XXX.print();
+//            for(auto a : A1.eigneValues){
+//                cout << a << "\t";
+//            }
+            cout << endl;
 
         }
 
         void updateRank(){
             // calculate the rank of nRows of the matrix
-            mat C; // basis of columns
-            mat R; // basis of nRows
+            matx C; // basis of columns
+            matx R; // basis of nRows
             int r = 0; // rank
 
             // find basis of nRows
-            mat rowElimination = gaussElimination(this->matrix);
+            matx rowElimination = gaussElimination(this->matrix);
             vector<int> basisInd;
             for(int i = 0; i < this->nRows; i++){
-                vec row = rowElimination[i];
+                vect row = rowElimination[i];
                 bool isAllZero = all_of(row.begin(), row.end(), [](int x){return x==0;});
                 if(!isAllZero){
                     basisInd.push_back(i);
@@ -174,7 +266,7 @@ namespace LinearAlgebra{
                 }
             }
 
-            mat colElimination = gaussElimination(this->T());
+            matx colElimination = gaussElimination(this->T());
 
         }
 
@@ -184,28 +276,38 @@ namespace LinearAlgebra{
             this->U = get<1>(LU);
         }
 
-        void solveLinearEquation(){
+        vect solveLinearEquation(bool eigen=false){
+            vect res;
             if(this->U.empty()){
                 this->LUDecomposition();
             }
-
+            cout << endl;
             if(U.size() < U[0].size()){
-                LinearAlgebra::solveLinearEquation(this->U);
+                if(eigen){
+                    U[nRows-1][nCols-1] = U[nRows-1][nCols-2];
+                }
+
+                res = LinearAlgebra::solveLinearEquation(U);
             }
             else{
                 cout << "### There is no RHS vector c ###" << endl;
                 cout << "# of rows : " << this->U.size() << " # of cols : " << this->U[0].size() << endl;
             }
 
+            for(auto r : res){
+                assert(!isnan(r));
+            }
+
+            return res;
 
         }
 
-        mat getMatrix(){
+        matx getMatrix(){
             return this->matrix;
         }
 
-        mat T(){ //transpose
-            mat temp = Matrix(this->nCols, this->nRows, 0).getMatrix();
+        matx T(){ //transpose
+            matx temp = Matrix(this->nCols, this->nRows, 0).getMatrix();
             for(int i = 0; i < this->nCols; i++){
                 for(int j = 0; j < this->nRows; j++){
                     temp[i][j] = this->matrix[j][i];
@@ -225,7 +327,7 @@ namespace LinearAlgebra{
         }
     };
 
-    mat gaussElimination(mat A){ // Only Upper Triangular Matrix
+    matx gaussElimination(matx A){ // Only Upper Triangular Matrix
         // non-zero rows are basis
 
         int nRows = A.size();
@@ -258,48 +360,48 @@ namespace LinearAlgebra{
 
 
 
-    vec projection(vec &v1, vec &v2){
+    vect projection(vect &v1, vect &v2){
         // project v2 onto v1
         double coef = innerProduct(v1, v2) / innerProduct(v1, v1);
-        vec res;
+        vect res;
         for(auto v : v1){
             res.push_back(coef * v);
         }
         return res;
     }
 
-    vec vectorSum(vec v1, vec v2){
+    vect vectorSum(vect v1, vect v2){
         assert(v1.size() == v2.size());
         int sz = v1.size();
-        vec res(sz);
+        vect res(sz);
         for(int i = 0; i < sz; i++){
             res[i] = v1[i] + v2[i];
         }
         return res;
     }
 
-    vec vectorMinus(vec v1, vec v2){
+    vect vectorMinus(vect v1, vect v2){
         assert(v1.size() == v2.size());
         int sz = v1.size();
-        vec res(sz);
+        vect res(sz);
         for(int i = 0; i < sz; i++){
             res[i] = v1[i] - v2[i];
         }
         return res;
     }
 
-    mat GramSchmidt(mat A){
+    matx GramSchmidt(matx A){
         int nRows = A.size();
         int nCols = A[0].size();
 
-        mat Q;
+        matx Q;
         Q.resize(nRows);
         for(int i = 0; i < nRows; i++){
             Q[i].resize(nCols);
         }
 
         for(int i = 0; i < nCols; i++){
-            vec colVec(nRows);
+            vect colVec(nRows);
             for(int j = 0; j < nRows; j++){
                 colVec[j] = A[j][i];
             }
@@ -312,7 +414,7 @@ namespace LinearAlgebra{
             }
             else{
                 for(int k = 0; k < i; k++){
-                    vec u(nRows);
+                    vect u(nRows);
                     for(int j = 0; j < nRows; j++){
                         u[j] = Q[j][k];
                     }
@@ -340,12 +442,11 @@ namespace LinearAlgebra{
         return Q;
     }
 
-    tuple<mat, mat> LUDecomposition(mat A){
+    tuple<matx, matx> LUDecomposition(matx A){
         int nRows = A.size();
         int nCols = A[0].size();
-//    assert(nRows == nCols);
 
-        mat L;
+        matx L;
         L.resize(nRows);
         for(int i = 0; i <nRows; i++){
             L[i].resize(nCols);
@@ -364,7 +465,7 @@ namespace LinearAlgebra{
                 }
             }
 
-            vec temp = A[0];
+            vect temp = A[0];
             A[0] = A[maxRowIdx];
             A[maxRowIdx] = temp;
         }
@@ -380,23 +481,23 @@ namespace LinearAlgebra{
             }
         }
 
-        cout << "L:Lower Triangular Matrix" << endl;
-        Matrix C(L);
-        C.print();
-        cout << "U:Upper Triangular Matrix" <<endl;
-        Matrix B(A);
-        B.print();
+//        cout << "L:Lower Triangular Matrix" << endl;
+//        Matrix C(L);
+//        C.print();
+//        cout << "U:Upper Triangular Matrix" <<endl;
+//        Matrix B(A);
+//        B.print();
 //        cout << "LU" <<endl;
 //        Matrix T(matMul(L, A));
 //        T.print();
 
-        tuple<mat, mat> res = make_tuple(L, A);
+        tuple<matx, matx> res = make_tuple(L, A);
 
         return res;
     }
 
 
-    double innerProduct(vec &vec1, vec &vec2) {
+    double innerProduct(vect &vec1, vect &vec2) {
         assert(vec2.size() == vec1.size());
         double res = 0;
 
@@ -406,12 +507,12 @@ namespace LinearAlgebra{
         return res;
     }
 
-    mat outerProduct(vec vec1, vec vec2){ // vec1 * vec2^T
+    matx outerProduct(vect vec1, vect vec2){ // vec1 * vec2^T
         int sz1 = vec1.size();
         int sz2 = vec2.size();
         assert(sz1 == sz2);
 
-        mat res;
+        matx res;
         res.resize(sz1);
         for(int i = 0; i < sz1; i++){
             res[i].resize(sz1);
@@ -425,14 +526,14 @@ namespace LinearAlgebra{
         return res;
     }
 
-    mat matMul(mat A, mat B){
+    matx matMul(matx A, matx B){
         int lRows = A.size();
         int lCols = A[0].size();
         int rRows = B.size();
         int rCols = B[0].size();
         assert(lCols == rRows);
 
-        mat res;
+        matx res;
         res.resize(lRows);
         for(int i = 0; i < lRows; i++){
             res[i].resize(rCols);
@@ -440,8 +541,8 @@ namespace LinearAlgebra{
 
         for(int i = 0; i < lRows; i++){
             for(int j = 0; j < rCols; j++){
-                vec row = A[i];
-                vec col;
+                vect row = A[i];
+                vect col;
                 for(int k = 0; k < rRows; k++){
                     col.push_back(B[k][j]);
                 }
@@ -453,12 +554,12 @@ namespace LinearAlgebra{
 
     }
 
-    void solveLinearEquation(mat Uc){ //Uc : Upper triangular Matrix(U) + RHS(c)
+    vect solveLinearEquation(matx Uc){ //Uc : Upper triangular Matrix(U) + RHS(c)
         // using back substitution
         int nRows = Uc.size(); // 2
         int nCols = Uc[0].size(); // 3
 
-        vec res;
+        vect res;
         res.resize(nCols-1, 0); // remove RHS column
         int iter = 1;
         for(int i = nRows-1; i >= 0; i--){
@@ -474,7 +575,10 @@ namespace LinearAlgebra{
         for(auto s:res){
             cout << s << " ";
         }
+        cout << endl;
+        return res;
     }
+
 }
 
 
