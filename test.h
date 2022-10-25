@@ -6,7 +6,7 @@
 #define IME824_TEST_H
 
 #include "LinAlg.h"
-
+#include "utils.h"
 
 using namespace LinearAlgebra;
 
@@ -146,14 +146,16 @@ void armadiloTest(){
 //    X.print();
 //    y.print();
 //    cout << endl;
-    coeff.print();
+//    coeff.print();
 //    cout << endl;
-    score.print();
+//    score.print();
 //    cout << endl;
     latent.print();
 //    cout << endl;
 //    tsquared.print();
-
+//    mat sub = score.submat(0,0,score.n_rows-1, 2);
+//    sub.save("PCA_3feat.csv", csv_ascii);
+//    y.save("PCA_y.csv", csv_ascii);
 //    mat X(5, 4, fill::randu);
 //
 //    mat coeff;
@@ -162,6 +164,89 @@ void armadiloTest(){
 //    vec tsquared;
 //
 //    princomp(coeff, score, latent, tsquared, X);
+
+}
+
+void efficiencyTest(){
+    clock_t start, end, start1, end1;
+
+    // LU Decomposition
+    mat A;
+    A.load("wisc.dat");
+    A = A * A.t();
+//    A = A.submat(0,0,A.n_rows-1, A.n_cols-2);
+//    A={{1,2,3,4,5}, {2,1,4,5,6}, {8,1,2,6,4}, {2,8,9,0,1}, {5,7,2,3,4}};
+    mat L, U, P;
+    start = clock();
+    lu(L, U, P, A);
+    end = clock();
+
+    matx tempB;
+
+    readData<double>(tempB, "wisc.dat", '\t');
+    Matrix B(matMul(tempB, Matrix(tempB).T()));
+
+//    B.addRow({1,2,3,4,5});
+//    B.addRow({2,1,4,5,6});
+//    B.addRow({8,1,2,6,4});
+//    B.addRow({2,8,9,0,1});
+//    B.addRow({5,7,2,3,4});
+
+    start1 = clock();
+    B.LUDecomposition();
+    end1 = clock();
+    cout << "LU" << endl;
+    cout << (double) (end - start) / CLOCKS_PER_SEC << endl;
+    cout << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
+
+    // Qr
+
+    mat Q, R;
+    start = clock();
+    qr(Q, R, A);
+    end = clock();
+
+    start1 = clock();
+    B.QRDecomposition();
+    end1 = clock();
+    cout << "QR" << endl;
+    cout << (double) (end - start) / CLOCKS_PER_SEC << endl;
+    cout << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
+    // EigenValue
+
+    cx_vec eigval;
+    cx_mat eigvec;
+
+    start = clock();
+    eig_gen(eigval, eigvec, A);
+    end = clock();
+
+    start1 = clock();
+    B.eigenValue();
+    B.eigenVector();
+    end1 = clock();
+
+    cout << "Eigen" << endl;
+    cout << (double) (end - start) / CLOCKS_PER_SEC << endl;
+    cout << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
+
+    // SVD
+
+    mat UU;
+    vec s;
+    mat V;
+
+    start = clock();
+    svd(UU,s,V,A);
+    end = clock();
+
+    start1 = clock();
+    B.SVD();
+    end1 = clock();
+
+    cout << "SVD" << endl;
+    cout << (double) (end - start) / CLOCKS_PER_SEC << endl;
+    cout << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
 
 }
 

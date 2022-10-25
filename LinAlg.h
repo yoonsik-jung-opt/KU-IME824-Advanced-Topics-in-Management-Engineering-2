@@ -61,7 +61,6 @@ namespace LinearAlgebra{
             this->nCols = A[0].size();
         }
 
-
         vector<double> getRow(int rowInd) {
             return this->matrix[rowInd];
         }
@@ -147,8 +146,8 @@ namespace LinearAlgebra{
                 }
             }
 
-            Matrix X(temp);
-            X.print();
+//            Matrix X(temp);
+//            X.print();
 //            cout << iter << endl;
 
             for(int i = 0; i < nRows; i++){
@@ -214,21 +213,21 @@ namespace LinearAlgebra{
             Matrix V(Matrix(A1.eigenVectors).T());
             Matrix U(Matrix(A2.eigenVectors).T());
 
-            cout << "U" << endl;
-            U.print();
-            cout << "D" << endl;
-            D.print();
-            cout << "V" << endl;
-            V.print();
+//            cout << "U" << endl;
+//            U.print();
+//            cout << "D" << endl;
+//            D.print();
+//            cout << "V" << endl;
+//            V.print();
+//
+//            cout << "RESULT " << endl;
+//
+//            matx X;
+//            X = matMul(U.getMatrix(), D.getMatrix());
+//            X = matMul(X, V.T());
 
-            cout << "RESULT " << endl;
-
-            matx X;
-            X = matMul(U.getMatrix(), D.getMatrix());
-            X = matMul(X, V.T());
-
-            Matrix XX(X);
-            XX.print();
+//            Matrix XX(X);
+//            XX.print();
 
 
 
@@ -244,7 +243,7 @@ namespace LinearAlgebra{
 //            for(auto a : A1.eigneValues){
 //                cout << a << "\t";
 //            }
-            cout << endl;
+//            cout << endl;
 
         }
 
@@ -281,7 +280,7 @@ namespace LinearAlgebra{
             if(this->U.empty()){
                 this->LUDecomposition();
             }
-            cout << endl;
+//            cout << endl;
             if(U.size() < U[0].size()){
                 if(eigen){
                     U[nRows-1][nCols-1] = U[nRows-1][nCols-2];
@@ -294,9 +293,9 @@ namespace LinearAlgebra{
                 cout << "# of rows : " << this->U.size() << " # of cols : " << this->U[0].size() << endl;
             }
 
-            for(auto r : res){
-                assert(!isnan(r));
-            }
+//            for(auto r : res){
+//                assert(!isnan(r));
+//            }
 
             return res;
 
@@ -352,8 +351,8 @@ namespace LinearAlgebra{
 
         }
 
-        Matrix B(A);
-        B.print();
+//        Matrix B(A);
+//        B.print();
 
         return A;
     }
@@ -571,11 +570,11 @@ namespace LinearAlgebra{
             res[i] = (RHS - sum)/Uc[i][nCols-1-iter];
             iter++;
         }
-        cout << "Solution of Linear System" << endl;
-        for(auto s:res){
-            cout << s << " ";
-        }
-        cout << endl;
+//        cout << "Solution of Linear System" << endl;
+//        for(auto s:res){
+//            cout << s << " ";
+//        }
+//        cout << endl;
         return res;
     }
 

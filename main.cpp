@@ -12,7 +12,8 @@ int main() {
 //    linearSystemEx1();
 //    eigenEx2();
 //    operTest();
-//SVDTest();
-armadiloTest();
+//  SVDTest();
+//    armadiloTest();
+    efficiencyTest();
     return 0;
 }
