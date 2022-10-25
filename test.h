@@ -196,8 +196,8 @@ void efficiencyTest(){
     B.LUDecomposition();
     end1 = clock();
     cout << "LU" << endl;
-    cout << (double) (end - start) / CLOCKS_PER_SEC << endl;
-    cout << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
+    cout << "Armadillo : " <<(double) (end - start) / CLOCKS_PER_SEC << endl;
+    cout << "Implementation : " <<(double) (end1 - start1) / CLOCKS_PER_SEC << endl;
 
     // Qr
 
@@ -210,8 +210,8 @@ void efficiencyTest(){
     B.QRDecomposition();
     end1 = clock();
     cout << "QR" << endl;
-    cout << (double) (end - start) / CLOCKS_PER_SEC << endl;
-    cout << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
+    cout << "Armadillo : " <<(double) (end - start) / CLOCKS_PER_SEC << endl;
+    cout << "Implementation : " << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
     // EigenValue
 
     cx_vec eigval;
@@ -227,8 +227,8 @@ void efficiencyTest(){
     end1 = clock();
 
     cout << "Eigen" << endl;
-    cout << (double) (end - start) / CLOCKS_PER_SEC << endl;
-    cout << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
+    cout << "Armadillo : " <<(double) (end - start) / CLOCKS_PER_SEC << endl;
+    cout << "Implementation : " << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
 
     // SVD
 
@@ -245,8 +245,8 @@ void efficiencyTest(){
     end1 = clock();
 
     cout << "SVD" << endl;
-    cout << (double) (end - start) / CLOCKS_PER_SEC << endl;
-    cout << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
+    cout << "Armadillo : " <<(double) (end - start) / CLOCKS_PER_SEC << endl;
+    cout << "Implementation: " << (double) (end1 - start1) / CLOCKS_PER_SEC << endl;
 
 }
 
